@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrewAI Agent and Task Creation</title>
+    <style>
+        .task-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .task-checkbox {
+            margin-right: 5px;
+        }
+
+        .task-name {
+            cursor: pointer;
+            text-decoration: underline;
+            margin-right: 10px;
+        }
+
+        .task-details {
+            display: none;
+            margin-left: 20px;
+        }
+
+        button {
+            margin-left: 10px;
+            background-color: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #555;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        input[type="submit"],
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button {
+            margin-left: 10px;
+            background-color: #333;
+        }
+
+        #tasks_list {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .task-checkbox {
+            margin-right: 5px;
+            width: 20px;
+            margin-top: 14px;
+        }
+
+        .task-container {
+            margin-bottom: 20px;
+        }
+
+        .task-details {
+            display: none;
+            margin-left: 20px;
+        }
+
+        .task-name {
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        #executionStatus {
+            margin-top: 10px;
+            color: #333;
+        }
+    </style>
+
+<body>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div id="flash-messages">
+        {% for message in messages %}
+        <div class="flash-message {{ message[1] }}">{{ message}}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% if not api_key_set %}
+    <h2>Set OpenAI API Key</h2>
+    <form action="/set_api_key" method="post">
+        <label for="openai_api_key">OpenAI API Key:</label><br>
+        <input type="text" id="openai_api_key" name="openai_api_key" required><br>
+
+        <input type="submit" value="Set API Key">
+    </form>
+    {% endif %}
+
+
+    <h2>Add a CrewAI Agent</h2>
+    <form action="/create_agent" method="post">
+        <label for="role">Role:</label><br>
+        <p style="font-size: 12px; padding: 0; margin: 0;">Think of it like a job title for the AI. What should we call
+            the AI's position or function? Examples could be "Chat Assistant" or "Task Manager."</p>
+        <input type="text" id="role" name="role" required><br>
+
+        <label for="goal">Goal:</label><br>
+        <p style="font-size: 12px; padding: 0; margin: 0;">What's the main thing we want the AI to achieve? Is it
+            helping people with tasks, providing information, or something else? Describe the AI's primary purpose or
+            objective.</p>
+        <input type="text" id="goal" name="goal" required><br>
+
+        <label>Verbose:</label><br>
+        <div style="display: flex;width: 20px ;">
+            <input type="radio" id="verbose_true" name="verbose" value="true" required>
+            <label style="margin-top:0px;" for="verbose_true">True</label><br>
+        </div>
+        <div style="display: flex;width: 20px ;">
+            <input type="radio" id="verbose_false" name="verbose" value="false" required>
+            <label style="margin-top:0px;" for="verbose_false">False</label><br>
+        </div>
+
+
+        <label for="backstory">Backstory:</label><br>
+        <p style="font-size: 12px; padding: 0; margin: 0;">Imagine the AI as a character. What's its background story or
+            history? This could include details about how it was trained, what data it learned from, or any unique
+            features that make it special.</p>
+        <input type="text" id="backstory" name="backstory" required><br>
+
+        <label>Allow Delegation:</label><br>
+        <div style="display: flex;width: 20px ;">
+            <input type="radio" id="delegation_true" name="allow_delegation" required value="true">
+            <label style="margin-top:0px;" for="delegation_true">True</label><br>
+        </div>
+
+        <div style="display: flex;width: 20px ;">
+            <input type="radio" id="delegation_false" name="allow_delegation" required value="false">
+            <label style="margin-top:0px;" for="delegation_false">False</label><br>
+
+        </div>
+
+        <input type="submit" value="Add Agent">
+    </form>
+
+    <h2>Assign a Task for CrewAI Agent</h2>
+    <form action="/create_task" method="post">
+        <label for="selected_agent">Select Agent:</label><br>
+        <select id="selected_agent" name="selected_agent" onchange="showAgentDetails()" required>
+            <option value="">Select an Agent</option>
+            {% for agent in agents %}
+            <option value="{{ agent }}">{{ agent }}</option>
+            {% endfor %}
+        </select><br>
+
+        <div id="agent_details"></div>
+
+        <label for="task_name">Task Name:</label><br>
+        <input type="text" id="task_name" name="task_name" required><br>
+
+        <label for="task_description">Task Description:</label><br>
+        <p style="font-size: 12px; padding: 0; margin: 0;">What does the AI need to do for a specific task? Describe it
+            like you're explaining the task to someone in a few short sentences. For example, if it's a task to answer
+            customer questions, the description could be "Help customers with inquiries about products.</p>
+        <input type="text" id="task_description" name="task_description" required><br>
+
+        <input type="submit" value="Add Task">
+    </form>
+
+    <h2>Tasks for CrewAI Agents</h2>
+    <div id="tasks_list"></div>
+    <h2>Task Execution Output Options</h2>
+    <div>
+        <div style="display: flex;width: 50% ;">
+            <input style="margin-top: 12px;width: 20px;" type="radio" id="output_verbose" name="execution_output"
+                value="verbose" checked>
+            <label style="width: 70%;" for="output_verbose">Text Output </label><br>
+        </div>
+
+
+        <div style="display: flex;width: 50% ;">
+            <input type="radio" style="margin-top: 12px;width: 20px;" id="output_console" name="execution_output"
+                value="console">
+            <label style="width: 70%;" for="output_console">Verbose in Console</label><br>
+        </div>
+
+
+        <div style="display: flex;width: 50% ;">
+            <input type="radio" style="margin-top: 12px;width: 20px;" id="output_both" name="execution_output"
+                value="both">
+            <label style="width: 70%;" for="output_both">Both</label>
+        </div>
+
+
+
+    </div>
+
+    <button onclick="executeSelectedTasks()" id="executeButton">Execute</button>
+    <div id="executionStatus"></div>
+
+    <!-- ... [previous HTML code] ... -->
+    {% if agents_file_exists or output_file_exists or consolidated_code_exists %}
+    <h2>Download Files</h2>
+    <p>Download the created files:</p>
+    <ul>
+        {% if agents_file_exists %}
+        <li><a href="/download_file?file=agents.txt" download>Download Agents</a></li>
+        {% endif %}
+
+        {% if output_file_exists %}
+        <li><a href="/download_file?file=final_code_output.txt" download>Download Output</a></li>
+        {% endif %}
+
+        {% if consolidated_code_exists %}
+        <li><a href="/download_file?file=consolidated_code.py" download>Download Consolidated Code</a></li>
+        {% endif %}
+    </ul>
+    {% endif %}
+
+
+    <!-- ... [remaining HTML code] ... -->
+
+
+
+</body>
+<script>
+    function showAgentDetails() {
+        var selectedAgent = document.getElementById("selected_agent").value;
+        fetch(`/get_agent_details?agent_role=${selectedAgent}`)
+            .then(response => response.json())
+            .then(data => {
+                var detailsDiv = document.getElementById("agent_details");
+                detailsDiv.innerHTML = ""; // Clear previous details
+                for (var key in data) {
+                    detailsDiv.innerHTML += key + ": " + data[key] + "<br>";
+                }
+            });
+    }
+    function toggleDescription(taskId) {
+        var descDiv = document.getElementById("desc_" + taskId);
+        if (descDiv.style.display === "none" || descDiv.style.display === "") {
+            descDiv.style.display = "block";
+        } else {
+            descDiv.style.display = "none";
+        }
+    }
+
+    function loadTasks() {
+        fetch('/get_tasks')
+            .then(response => response.json())
+            .then(tasks => {
+                var tasksDiv = document.getElementById("tasks_list");
+                tasksDiv.innerHTML = ""; // Clear previous tasks
+                tasks.forEach((task, index) => {
+                    let taskElements = task.split(', Description: ');
+                    let taskName = taskElements[0];
+                    let taskDesc = taskElements[1] || 'No description';
+
+                    tasksDiv.innerHTML += `
+    <div class="task-container">
+        <input type="checkbox" class="task-checkbox" value="${task}" />
+        <span class="task-name" onclick="toggleDescription(${index})">${taskName}</span>
+        <div id="desc_${index}" class="task-details" style="display:none; margin-left:20px;">Description: ${taskDesc}</div>
+        <button onclick="deleteTask('${task}')">Delete</button>
+        <button onclick="reassignTask('${task}')">Reassign Task</button>
+    </div>
+`;
+
+
+                });
+            });
+    }
+
+    function deleteTask(task) {
+        const confirmation = confirm(`Are you sure you want to delete the task: ${task}?`);
+
+        if (confirmation) {
+            fetch('/delete_task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `task=${encodeURIComponent(task)}`
+            })
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    loadTasks(); // Reload tasks
+                });
+        } else {
+            alert('Delete operation canceled.');
+        }
+    }
+
+    function reassignTask(task) {
+        const confirmation = confirm(`Are you sure you want to reassign the task: ${task}?`);
+
+        if (confirmation) {
+            fetch('/reassign_task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `task=${encodeURIComponent(task)}`
+            })
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    loadTasks(); // Reload tasks
+                });
+        } else {
+            alert('Reassign operation canceled.');
+        }
+    }
+
+
+    window.onload = function () {
+        loadTasks(); // Load tasks when page loads
+    };
+
+    var isApiKeySet = JSON.parse('{{ api_key_set | tojson | safe }}');
+
+    function executeSelectedTasks() {
+        let executeButton = document.getElementById('executeButton');
+        let selectedTasks = document.querySelectorAll('.task-checkbox:checked');
+
+
+        // Check if the API key is set
+        if (typeof isApiKeySet === 'boolean' && !isApiKeySet) {
+            alert('API Key is required for task execution. Set the API Key first.');
+            return;
+
+        } else if (typeof isApiKeySet === 'string' && isApiKeySet.toLowerCase() !== 'true') {
+            alert('API Key is required for task execution. Set the API Key first.');
+            return;
+        }
+
+        // Check if at least one task is selected
+        if (selectedTasks.length === 0) {
+            alert('Please select at least one task before executing.');
+            return;
+        }
+        
+        executeButton.disabled = true;
+
+        let executionStatusDiv = document.getElementById('executionStatus');
+        executionStatusDiv.innerHTML = 'Executing...';
+
+        let selectedTasksValues = Array.from(selectedTasks).map(checkbox => checkbox.value);
+
+        let outputOption = document.querySelector('input[name="execution_output"]:checked').value;
+
+        fetch('/execute_tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tasks: selectedTasksValues })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                let executionResult = '';
+
+                if (outputOption === 'verbose' || outputOption === 'both') {
+                    executionResult += 'Execution completed! Result: ' + JSON.stringify(data.result);
+                }
+
+                if (outputOption === 'console' || outputOption === 'both') {
+                    executionResult += ' Execution completed! Result! Check console';
+                    console.log(data.result);
+                }
+
+                executionStatusDiv.innerHTML = executionResult;
+            })
+
+            .catch(error => {
+                let executionStatusDiv = document.getElementById('executionStatus');
+                executionStatusDiv.innerHTML = `Error executing tasks: ${error.message}`;
+            })
+            .finally(() => {
+                executeButton.disabled = false;  // Enable the button after execution
+            });
+    }
+
+
+
+
+</script>
+
+</html>
