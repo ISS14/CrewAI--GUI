@@ -1,14 +1,15 @@
 from flask import Flask, request, render_template_string, jsonify,redirect, url_for,send_file,flash
 from crewai import Agent, Task, Crew, Process
-import secrets
 import os
+import secrets
 api_key_set = False  # Initialize as not set
-# Generate a random secret key
-
 
 app = Flask(__name__)
 
 app.secret_key = secrets.token_hex(16)  
+
+
+
 def get_agents():
     agents = []
     try:
@@ -21,33 +22,11 @@ def get_agents():
         pass
     return agents
 
-@app.route('/set_api_key', methods=['POST'])
-def set_api_key():
-    try:
-        openai_api_key = request.form['openai_api_key']
-        with open('agents.txt', 'a') as file:
-            file.write(f"API_KEY: {openai_api_key}\n")
-        flash('API Key set successfully!', 'success')
-    except Exception as e:
-        flash(f'Error setting API Key: {str(e)}', 'error')
-    return redirect(url_for('index'))
-
-
-def is_api_key_set():
-    try:
-        with open('agents.txt', 'r') as file:
-            for line in file:
-                if line.startswith("API_KEY:"):
-                    return True
-    except FileNotFoundError:
-        pass
-    return False
-
 
 @app.route('/')
 def index():
     agents = get_agents()
-    api_key_set = is_api_key_set()
+    api_key_set = 'OPENAI_API_KEY' in os.environ
 
     # Check file existence and pass to template
     agents_file_exists = 'agents.txt' in os.listdir()
@@ -62,8 +41,15 @@ def index():
                            output_file_exists=output_file_exists,
                            consolidated_code_exists=consolidated_code_exists)
 
-
-
+@app.route('/set_api_key', methods=['POST'])
+def set_api_key():
+    try:
+        openai_api_key = request.form['openai_api_key']
+        os.environ["OPENAI_API_KEY"] = openai_api_key
+        flash('API Key set successfully!', 'success')
+    except Exception as e:
+        flash(f'Error setting API Key: {str(e)}', 'error')
+    return redirect(url_for('index'))
 
 @app.route('/get_agent_details')
 def get_agent_details():
@@ -237,8 +223,10 @@ def execute_tasks():
     # Start the process
     result = app_dev_crew.kickoff()
 
+# Define the file name
     output_file = 'output.txt'
 
+# Write the result to a file and print it in the terminal
     with open('final_code_output.txt', 'w') as file:
         print(result)  # Print to the terminal
         file.write(str(result))  # Write to the file
@@ -260,4 +248,4 @@ def download_file():
     return send_file(filename, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True,port=4500)

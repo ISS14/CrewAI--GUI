@@ -376,23 +376,21 @@
         let executeButton = document.getElementById('executeButton');
         let selectedTasks = document.querySelectorAll('.task-checkbox:checked');
 
-
-        // Check if the API key is set
-        if (typeof isApiKeySet === 'boolean' && !isApiKeySet) {
-            alert('API Key is required for task execution. Set the API Key first.');
-            return;
-
-        } else if (typeof isApiKeySet === 'string' && isApiKeySet.toLowerCase() !== 'true') {
-            alert('API Key is required for task execution. Set the API Key first.');
-            return;
-        }
-
         // Check if at least one task is selected
         if (selectedTasks.length === 0) {
             alert('Please select at least one task before executing.');
             return;
         }
-        
+        // Check if the API key is set
+        if (typeof isApiKeySet === 'boolean' && !isApiKeySet) {
+            alert('API Key is required for task execution. Set the API Key first.');
+            return;
+        } else if (typeof isApiKeySet === 'string' && isApiKeySet.toLowerCase() !== 'true') {
+            alert('API Key is required for task execution. Set the API Key first.');
+            return;
+        }
+
+
         executeButton.disabled = true;
 
         let executionStatusDiv = document.getElementById('executionStatus');
