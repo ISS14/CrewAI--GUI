@@ -39,12 +39,21 @@ Flask is a lightweight WSGI web application framework used to run the CrewAI app
 •	Install Flask using pip (Python's package installer) by running the following command:
           **pip install Flask**
 
-**Step 4: Install CrewAI**
+**Step 4: Install Microsoft Visual C++ Build Tools**
+
+Before installing CrewAI, you need to install Microsoft Visual C++ Build Tools. Follow these steps:
+
+•	Visit the [Microsoft C++ Build Tools] link.
+
+•	Download and install the latest version of Microsoft Visual C++ Build Tools.
+
+
+**Step 5: Install CrewAI**
 
 In your command line interface (CLI). Install CrewAI via pip. Enter the following command:
           **pip install crewai**
 
-**Step 5: Run the Application**
+**Step 6: Run the Application**
 
 Finally, to run the CrewAI application:
 
