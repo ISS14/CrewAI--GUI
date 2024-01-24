@@ -43,7 +43,7 @@ Flask is a lightweight WSGI web application framework used to run the CrewAI app
 
 Before installing CrewAI, you need to install Microsoft Visual C++ Build Tools. Follow these steps:
 
-•	Visit the [Microsoft C++ Build Tools] link.
+•	Visit the (https://visualstudio.microsoft.com/downloads/?q=build+tools) link.
 
 •	Download and install the latest version of Microsoft Visual C++ Build Tools.
 
